@@ -97,6 +97,18 @@ functions:
           - prefix: originals/
         existing: true
 
+  # Function to crop an uploaded image
+  # after facial analysis saved in DynamoDB
+  # and save it to S3
+  processImage:
+    handler: functions/processImage.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt:
+              - ImagesTable
+              - StreamArn
 
 # AWS Resources
 resources:
