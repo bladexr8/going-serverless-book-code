@@ -10,10 +10,55 @@ service: snapnext
 plugins:
   - serverless-offline
 
+custom:
+  imagesBucketName: serverless-pipeline-images
+  imagesTableName: serverless-pipeline-images
+  originalsFolderName: originals
+  processedFolderName: processed
+
 # The `provider` block defines where your service will be deployed
 provider:
   name: aws
   runtime: nodejs12.x
+  stage: dev
+
+  iamRoleStatements: # IAM permissions granted to all functions
+    - Effect: Allow
+      Action:
+        - S3:GetObject
+        - S3:PutObject
+        - S3:PutObjectAcl
+      Resource:
+      - Fn::Join:
+        - ""
+        - - "arn:aws:s3:::"
+          - "${self:custom.imagesBucketName}/*"
+
+  environment:
+    IMAGES_BUCKET_NAME: ${self:custom.imagesBucketName}
+    IMAGES_TABLE_NAME: ${self:custom.imagesTableName}
+    ORIGINAL_FOLDER_NAME: ${self:custom.originalsFolderName}
+    PROCESSED_FOLDER_NAME: ${self:custom.processedFolderName}
+
 
 # The `functions` block defines what code to deploy
 # functions:
+functions:
+  # Function to download an image from a URL
+  downloadImage:
+    handler: functions/downloadImage.handler
+    events:
+      - http:
+          path: images
+          method: post
+
+
+# AWS Resources
+resources:
+  Resources:
+    ImagesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.imagesBucketName}
+        AccessControl: PublicRead
+
