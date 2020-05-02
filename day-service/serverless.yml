@@ -14,11 +14,11 @@ provider:
 
 # The `functions` block defines what code to deploy
 functions:
-  helloWorld:
-    handler: handler.helloWorld
+  calculateDay:
+    handler: handler.calculateDay
     # The `events` block defines how to trigger the handler.helloWorld code
     events:
       - http:
-          path: hello-world
-          method: get
+          path: calculateDay
+          method: post
           cors: true
