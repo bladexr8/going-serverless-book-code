@@ -11,7 +11,7 @@ plugins:
   - serverless-offline
 
 custom:
-  imagesBucketName: serverless-pipeline-images
+  # imagesBucketName: serverless-pipeline-images
   imagesTableName: serverless-pipeline-images
   originalsFolderName: originals
   processedFolderName: processed
@@ -31,11 +31,13 @@ provider:
       Resource:
       - Fn::Join:
         - ""
-        - - "arn:aws:s3:::"
-          - "${self:custom.imagesBucketName}/*"
+        - - Fn::GetAtt: [ImagesBucket, Arn]
+          - "/*"
 
   environment:
-    IMAGES_BUCKET_NAME: ${self:custom.imagesBucketName}
+    # IMAGES_BUCKET_NAME: ${self:custom.imagesBucketName}
+    IMAGES_BUCKET_NAME:
+      Ref: ImagesBucket
     IMAGES_TABLE_NAME: ${self:custom.imagesTableName}
     ORIGINAL_FOLDER_NAME: ${self:custom.originalsFolderName}
     PROCESSED_FOLDER_NAME: ${self:custom.processedFolderName}
@@ -58,7 +60,8 @@ resources:
   Resources:
     ImagesBucket:
       Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:custom.imagesBucketName}
-        AccessControl: PublicRead
+  Outputs:
+    ImagesBucketName:
+      Value:
+        Ref: ImagesBucket
 
