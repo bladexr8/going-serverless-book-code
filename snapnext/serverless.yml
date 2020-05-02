@@ -7,12 +7,18 @@
 # The `service` block is the name of the service
 service: snapnext
 
+# create an optimized package for functions
+package:
+  individually: true
+
 plugins:
+  # - serverless-bundle
   - serverless-offline
 
 custom:
   # imagesBucketName: serverless-pipeline-images
-  imagesTableName: serverless-pipeline-images
+  stage: ${opt:stage, self:provider.stage}
+  imagesTableName: ${self:custom.stage}-snapnext-images
   originalsFolderName: originals
   processedFolderName: processed
 
@@ -21,6 +27,7 @@ provider:
   name: aws
   runtime: nodejs12.x
   stage: dev
+  region: us-east-1
 
   iamRoleStatements: # IAM permissions granted to all functions
     - Effect: Allow
@@ -33,6 +40,30 @@ provider:
         - ""
         - - Fn::GetAtt: [ImagesBucket, Arn]
           - "/*"
+    - Effect: Allow
+      Action:
+        - rekognition:DetectFaces
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynmamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:DescribeStream
+        - dynamodb:GetRecords
+        - dynamodb:GetShardIterator
+        - dynamodb:ListStreams
+      Resource:
+        - Fn::Join:
+          - ""
+          - - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:"
+            - "table/${self:custom.imagesTableName}"
+        - Fn::Join:
+          - ""
+          - - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:"
+            - "table/${self:custom.imagesTableName}/stream/*"    
 
   environment:
     # IMAGES_BUCKET_NAME: ${self:custom.imagesBucketName}
@@ -54,12 +85,49 @@ functions:
           path: images
           method: post
 
+  # Function to analyze an uploaded image
+  analyzeImage:
+    handler: functions/analyzeImage.handler
+    events:
+      - s3:
+        bucket: 
+          Ref: ImagesBucket
+        event: s3:ObjectCreated:*
+        rules:
+          - prefix: originals/
+        existing: true
+
 
 # AWS Resources
 resources:
   Resources:
     ImagesBucket:
       Type: AWS::S3::Bucket
+    
+    # DynamoDB Table
+    # "StreamSpecification" is used to specify what
+    # kinds of DB updates emit an event.
+    # "NEW_AND_OLD_IMAGES" emits an event for both
+    # updates to existing items and additions
+    # of new items
+    ImagesTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: ${self:custom.imagesTableName}
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+  
   Outputs:
     ImagesBucketName:
       Value:
