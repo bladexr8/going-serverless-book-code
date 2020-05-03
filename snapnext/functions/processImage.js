@@ -1,5 +1,9 @@
 // process an image
 
+// Note this doesn't work as ImageMagick
+// no longer pre-installed with Lambda
+// Nodejs 12.x runtime
+
 const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
