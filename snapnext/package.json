@@ -16,6 +16,6 @@
     "gm": "^1.23.1",
     "haikunator": "^2.1.2",
     "lodash": "^4.17.15",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1"
   }
 }
