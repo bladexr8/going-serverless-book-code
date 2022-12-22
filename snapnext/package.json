@@ -6,7 +6,7 @@
   "devDependencies": {
     "jest": "^25.5.3",
     "lambda-tester": "^4.0.1",
-    "serverless-offline": "^6.1.4"
+    "serverless-offline": "^12.0.3"
   },
   "jest": {
     "collectCoverage": true
